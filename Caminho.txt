@@ -84,7 +84,6 @@ Mar del Plata,Merlo,500
 Mar del Plata,Neuquen,1400
 Mar del Plata,Quilmes,550
 San Miguel de Tucuman,Salta,400
-San Miguel de Tucuman,Salta,400
 San Miguel de Tucuman,Santa Fe de la Vera Cruz,600
 San Miguel de Tucuman,Vicente Lopez,800
 San Miguel de Tucuman,Corrientes,1000
