@@ -1,0 +1,6 @@
+Belo Horizonte,Contagem,10
+Belo Horizonte,Ibirite,15
+Belo Horizonte,Ribeirao das Neves, 20
+Contagem,Ibirite,25
+Contagem,Ribeirao das Neves,15
+Ibirite,Ribeirao das Neves,5

@@ -1,5 +1,5 @@
 import numpy as np
-
+import openpyxl
 def ler_cidades_de_arquivo(nome_arquivo):
     try:
         lista_cidades = []
@@ -14,24 +14,46 @@ def ler_cidades_de_arquivo(nome_arquivo):
         print(f"Arquivo '{nome_arquivo}' não encontrado.")
         return []
 
-def ler_mapa(nome_arquivo, cidades_lidas, quantidade_cidades): 
-    mapa = np.zeros((quantidade_cidades, quantidade_cidades)) # Cria uma matriz de zeros com a quantidade de cidades
+def ler_mapa(nome_arquivo, cidades_lidas, quantidade_cidades):
+    mapa = np.full((quantidade_cidades, quantidade_cidades), float('inf'))  # Usar infinito ao invés de zero
+    np.fill_diagonal(mapa, 0)  # Distância de uma cidade para ela mesma é zero
     try:
-        with open(nome_arquivo, "r", encoding='utf-8') as arquivo: # Abre o arquivo para leitura
-            linhas = arquivo.readlines() # Lê todas as linhas do arquivo
-            for linha in linhas: # Para cada linha do arquivo
-                cidade_info = linha.strip().split(",") # Remove espaços em branco e divide a linha em uma lista
+        with open(nome_arquivo, "r", encoding='utf-8') as arquivo:  # Abre o arquivo para leitura
+            linhas = arquivo.readlines()  # Lê todas as linhas do arquivo
+            for linha in linhas:  # Para cada linha do arquivo
+                cidade_info = linha.strip().split(",")  # Remove espaços em branco e divide a linha em uma lista
+                print(cidade_info)
                 try:
-                    if len(cidade_info) == 3: # Se a lista tiver 3 elementos
-                        origem, destino, custo = cidade_info # Atribui os elementos a origem, destino e custo
-                        mapa[cidades_lidas[origem]][cidades_lidas[destino]] = int(custo) # Adiciona o custo à matriz
-                        mapa[cidades_lidas[destino]][cidades_lidas[origem]] = int(custo) # Adiciona o custo à matriz
+                    if len(cidade_info) == 3:  # Se a lista tiver 3 elementos
+                        origem, destino, custo = cidade_info  # Atribui os elementos a origem, destino e custo
+                        if mapa[cidades_lidas[origem]][cidades_lidas[destino]] == float('inf'):
+                            mapa[cidades_lidas[origem]][cidades_lidas[destino]] = int(custo)  # Adiciona o custo à matriz
                 except:
-                    print("")
+                    print("Erro ao processar linha:", linha)
         return mapa
     except FileNotFoundError:
         print(f"Arquivo '{nome_arquivo}' não encontrado.")
         return []
+    
+
+def salvar_escolhas_excel(escolhas, nome_arquivo="escolhas.xlsx"):
+    # Cria uma nova planilha Excel
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Escolhas"
+
+    # Adiciona os cabeçalhos
+    ws.append(["Cidade Atual", "Cidade Mais Próxima", "Distância"])
+
+    # Adiciona os dados das escolhas
+    print(f"Total de escolhas: {len(escolhas)}")  # Debugging line
+    for escolha in escolhas:
+        ws.append(escolha)
+
+    # Salva o arquivo Excel
+    wb.save(nome_arquivo)
+    print(f"Escolhas salvas em {nome_arquivo}")
+
 
 def vizinho_mais_proximo(indices_a_percorrer, matriz_distancia):
     # Essa parte do código procura pela rota mais curta usando uma abordagem heuristica, buscando reduzir a complexidade do código
@@ -46,7 +68,7 @@ def vizinho_mais_proximo(indices_a_percorrer, matriz_distancia):
 
     # Também iniciamos com o custo zerado
     custo_total = 0
-    
+    escolhas = []
     # Enquanto houverem cidades não visitadas esse loop vai rodar
     while nao_visitado:
         # Pegamos a última cidade visitada pois sempre partimos a partir do último local
@@ -59,16 +81,34 @@ def vizinho_mais_proximo(indices_a_percorrer, matriz_distancia):
         # Neste loop, para cada cidade não visitada, pegamos a distância entre a cidade atual e a cidade candidata (cidade). Se essa distância for menor que distancia_minima e maior que 0, atualizamos distancia_minima e cidade_mais_proxima. distance > 0 evita escolher um caminho inválido.
         for cidade in nao_visitado: 
             distancia = matriz_distancia[cidade_atual][cidade] # Calcula a distância entre a cidade atual e a cidade candidata
-            if distancia < distancia_minima and distancia > 0: # Se a distância for menor que a distância mínima e maior que 0
-                distancia_minima = distancia # Atualiza a distância mínima
-                cidade_mais_proxima = cidade # Atualiza a cidade mais próxima
-        
+            if distancia != float('inf') and distancia > 0:
+                print(f"Valid path found: {cidade_atual} -> {cidade}, Distance: {distancia}")
+                if distancia < distancia_minima:
+                    distancia_minima = distancia
+                    cidade_mais_proxima = cidade
+                    print(f"New best choice: {cidade_atual} -> {cidade_mais_proxima}, Distance: {distancia}")
 
         # Se nenhuma cidade foi encontrada, escolhemos a primeira cidade não visitada e atribuímos a distância correspondente.
         if cidade_mais_proxima is None:
-            cidade_mais_proxima = nao_visitado[0] # Atribui a primeira cidade não visitada
-            distancia_minima = matriz_distancia[cidade_atual][cidade_mais_proxima] # Atribui a distância correspondente
-            
+            print(f"No direct path found from city {cidade_atual}. Looking for any valid connection...")
+            for cidade in nao_visitado:
+                # Check all remaining unvisited cities for ANY valid connection
+                distancia = matriz_distancia[cidade_atual][cidade]
+                if distancia != float('inf') and distancia > 0:
+                    cidade_mais_proxima = cidade
+                    distancia_minima = distancia
+                    print(f"Found alternative path: {cidade_atual} -> {cidade_mais_proxima}, Distance: {distancia}")
+                    break
+        
+        if cidade_mais_proxima is None:
+            print(f"Warning: No valid path found from city {cidade_atual} to any remaining city")
+            # Choose the first unvisited city and check if there's a path in either direction
+            cidade_mais_proxima = nao_visitado[0]
+            distancia_direta = matriz_distancia[cidade_atual][cidade_mais_proxima]
+            if distancia_direta == float('inf') or distancia_direta <= 0:
+                print(f"Using fallback path to continue route")
+                distancia_minima = float('inf')
+
         # Adicionamos a cidade encontrada à rota.    
         rota.append(cidade_mais_proxima)
 
@@ -76,8 +116,10 @@ def vizinho_mais_proximo(indices_a_percorrer, matriz_distancia):
         nao_visitado.remove(cidade_mais_proxima)
 
         # Adicionamos a distância mínima ao custo total.
-        custo_total += distancia_minima
-    
+        if distancia_minima != float('inf'):
+            custo_total += distancia_minima
+            escolhas.append((cidade_atual, cidade_mais_proxima, distancia_minima))
+    salvar_escolhas_excel(escolhas)
     return rota, custo_total # Retorna a rota e o custo total
 
 def caminho_mais_curto(cidades_obrigatorias, dicionario_cidades, matriz_distancia):  
@@ -122,7 +164,8 @@ def main():
     
     # Converte a lista de cidades em um dicionário de mapeamento {nome: índice}, facilitando buscas rápidas.
     dicionario_cidades = {cidade[0]: cidade[1] for cidade in lista_cidades}
-    
+    print(dicionario_cidades)
+    print("quantidade de cidades: ", len(lista_cidades))
     # A função ler_mapa precisa converter os dados corretamente para formar a distance_matrix
     matriz_distancia = ler_mapa("Caminho.txt", dicionario_cidades, len(lista_cidades)) # Lê o mapa e retorna a matriz de distâncias
      
@@ -134,14 +177,18 @@ def main():
         # melhor_rota = [2, 0, 3, 1] 
         # indice_ate_cidade = {0: "Buenos Aires", 1: "Cordoba", 2: "Rosario", 3: "La Plata"}
         # rotas = ["Rosario", "Buenos Aires", "La Plata", "Cordoba"]
-        indice_ate_cidade = {v: k for k, v in dicionario_cidades.items()}
-        rotas = [indice_ate_cidade[i] for i in melhor_rota]
-        
-        # Resultados
-        print("\nRota encontrada:")
-        for i, cidade in enumerate(rotas, 1):
-            print(f"{i}. {cidade}")
-        print(f"\nCusto total: {custo_minimo}")
+
+        if melhor_rota is None:  # Check if no route was found
+            print("Não foi possível encontrar uma rota válida.")
+        else:
+            indice_ate_cidade = {v: k for k, v in dicionario_cidades.items()}
+            rotas = [indice_ate_cidade[i] for i in melhor_rota]
+            
+            # Resultados
+            print("\nRota encontrada:")
+            for i, cidade in enumerate(rotas, 1):
+                print(f"{i}. {cidade}")
+            print(f"\nCusto total: {custo_minimo}")
         
     except ValueError as e:
         print(f"\Erro: {e}")
