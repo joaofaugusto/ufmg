@@ -1,4 +1,3 @@
-ORIGEM,DESTINO,CUSTO
 Buenos Aires,Cordoba,700
 Buenos Aires,Rosario,400
 Buenos Aires,La Plata,50
@@ -85,7 +84,6 @@ Mar del Plata,Merlo,500
 Mar del Plata,Neuquen,1400
 Mar del Plata,Quilmes,550
 San Miguel de Tucuman,Salta,400
-ORIGEM,DESTINO,CUSTO
 San Miguel de Tucuman,Salta,400
 San Miguel de Tucuman,Santa Fe de la Vera Cruz,600
 San Miguel de Tucuman,Vicente Lopez,800
@@ -113,7 +111,6 @@ Salta,Parana,700
 Salta,Merlo,800
 Salta,Neuquen,1300
 Salta,Quilmes,500
-ORIGEM,DESTINO,CUSTO
 Santa Fe de la Vera Cruz,Vicente Lopez,400
 Santa Fe de la Vera Cruz,Corrientes,700
 Santa Fe de la Vera Cruz,Pilar,300
