@@ -143,7 +143,7 @@ def main():
         indice_ate_cidade = {v: k for k, v in dicionario_cidades.items()}
         rotas = [indice_ate_cidade[i] for i in melhor_rota]
         
-        # Print results
+        # Resultados
         print("\nRota encontratada:")
         for i, cidade in enumerate(rotas, 1):
             print(f"{i}. {cidade}")
